@@ -10,7 +10,7 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Install GCC and G++ for the compiler functionality
-RUN apk add --no-source --no-cache gcc g++ musl-dev
+RUN apk add --no-cache gcc g++ musl-dev
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
