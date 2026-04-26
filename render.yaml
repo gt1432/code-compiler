@@ -1,10 +1,8 @@
 services:
   - type: web
     name: code-compiler
-    runtime: java
+    runtime: docker
     plan: free
-    buildCommand: "./mvnw clean install"
-    startCommand: "java -jar target/*.jar"
     envVars:
       - key: SPRING_DATA_MONGODB_URI
         sync: false # You will set this in the dashboard or I'll use a placeholder
