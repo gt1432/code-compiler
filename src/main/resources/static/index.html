@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina | Professional Online Compiler</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+</head>
+<body>
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="overlay">
+        <div class="auth-card">
+            <div class="logo" style="justify-content: center;">
+                <img src="/assets/logo.png" alt="Lumina Logo" style="width: 40px; height: 40px;">
+                <span>Lumina Code</span>
+            </div>
+            <div id="login-form">
+                <h2>Welcome Back</h2>
+                <input type="text" id="login-username" placeholder="Username">
+                <input type="password" id="login-password" placeholder="Password">
+                <button id="login-btn" class="primary w-100">Login</button>
+                <p>Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
+            </div>
+            <div id="signup-form" style="display: none;">
+                <h2>Create Account</h2>
+                <input type="text" id="signup-username" placeholder="Username">
+                <input type="password" id="signup-password" placeholder="Password">
+                
+                <div class="avatar-selection">
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Select Your Avatar</p>
+                    <div class="avatar-grid" id="avatar-options">
+                        <!-- Male Avatars (1-5) -->
+                        <div class="avatar-opt" data-avatar="m1" style="background-image: url('/assets/avatars_m.png'); background-position: 0% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="m2" style="background-image: url('/assets/avatars_m.png'); background-position: 25% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="m3" style="background-image: url('/assets/avatars_m.png'); background-position: 50% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="m4" style="background-image: url('/assets/avatars_m.png'); background-position: 75% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="m5" style="background-image: url('/assets/avatars_m.png'); background-position: 100% 0%;"></div>
+                        <!-- Female Avatars (1-5) -->
+                        <div class="avatar-opt" data-avatar="f1" style="background-image: url('/assets/avatars_f.png'); background-position: 0% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="f2" style="background-image: url('/assets/avatars_f.png'); background-position: 25% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="f3" style="background-image: url('/assets/avatars_f.png'); background-position: 50% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="f4" style="background-image: url('/assets/avatars_f.png'); background-position: 75% 0%;"></div>
+                        <div class="avatar-opt" data-avatar="f5" style="background-image: url('/assets/avatars_f.png'); background-position: 100% 0%;"></div>
+                    </div>
+                </div>
+
+                <button id="signup-submit-btn" class="primary w-100">Sign Up</button>
+                <p>Already have an account? <a href="#" id="show-login">Login</a></p>
+            </div>
+            <div id="auth-error" class="error-text" style="display: none; margin-top: 10px; text-align: center;"></div>
+        </div>
+    </div>
+
+    <aside>
+        <div class="logo">
+            <img src="/assets/logo.png" alt="Lumina Logo" style="width: 32px; height: 32px;">
+            <span>Lumina Code</span>
+        </div>
+        
+        <div class="user-profile">
+            <div id="user-avatar" class="avatar-small"></div>
+            <div class="profile-info">
+                <span id="display-username">Not Logged In</span>
+                <button id="logout-btn" class="btn-sm">Logout</button>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Execution History</h3>
+            <div class="filter-controls">
+                <select id="history-lang-filter">
+                    <option value="">All Languages</option>
+                    <option value="java">Java</option>
+                    <option value="python">Python</option>
+                    <option value="c">C</option>
+                    <option value="cpp">C++</option>
+                </select>
+            </div>
+            <div id="history-list">
+                <!-- Submissions will be loaded here -->
+            </div>
+        </div>
+        <div class="footer-info">
+            v1.1.0 | Scalable & Secure
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <div class="controls">
+                <select id="language-select">
+                    <option value="java">Java 21</option>
+                    <option value="python">Python 3</option>
+                    <option value="c">C (GCC)</option>
+                </select>
+                <div id="save-status" style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center;"></div>
+            </div>
+            <div class="actions">
+                <button id="clear-btn">Clear Output</button>
+                <button id="save-btn">Save Snippet</button>
+                <button id="run-btn" class="primary">Run Code</button>
+            </div>
+        </header>
+
+        <div class="workspace">
+            <div id="editor-container">
+                <textarea id="editor"></textarea>
+            </div>
+            <div id="output-panel">
+                <div class="panel-header">
+                    <span>TERMINAL / OUTPUT</span>
+                    <span id="exec-info"></span>
+                </div>
+                <div id="terminal">
+                    <div class="output-line">Welcome to Lumina Code. Select a language and start coding.</div>
+                </div>
+                <div id="input-area">
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 5px; display: flex; justify-content: space-between;">
+                        <span>STDIN (Input)</span>
+                        <span style="opacity: 0.6;">Program reads from here</span>
+                    </div>
+                    <textarea id="stdin" placeholder="Enter program input here..."></textarea>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
