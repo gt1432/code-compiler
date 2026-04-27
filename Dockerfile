@@ -9,14 +9,16 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
-# Install GCC, G++, Python3 and Node.js for the compiler functionality
+# Install GCC, G++, Python3, Node.js and CA certificates
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     python3 \
     nodejs \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
 
