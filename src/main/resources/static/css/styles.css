@@ -304,7 +304,7 @@ textarea#stdin {
     height: 40px;
     min-width: 40px;
     border-radius: 50%;
-    background-size: 500% 100%; /* For the 5-avatar sprite */
+    background-size: cover;
     background-color: var(--border-color);
     border: 2px solid var(--accent-color);
     box-shadow: 0 0 10px var(--accent-glow);
@@ -331,7 +331,8 @@ textarea#stdin {
     width: 100%;
     aspect-ratio: 1;
     border-radius: 50%;
-    background-size: 500% 100%;
+    background-size: cover;
+    background-position: center;
     cursor: pointer;
     border: 2px solid transparent;
     transition: all 0.2s;

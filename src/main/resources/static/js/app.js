@@ -56,10 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Set User Avatar
             if (avatarUrl) {
-                const isMale = avatarUrl.startsWith('m');
-                const idx = parseInt(avatarUrl.substring(1)) - 1;
-                userAvatar.style.backgroundImage = `url('/assets/avatars_${isMale ? 'm' : 'f'}.png')`;
-                userAvatar.style.backgroundPosition = `${idx * 25}% 0%`;
+                userAvatar.style.backgroundImage = `url('https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarUrl}&backgroundColor=b6e3f4')`;
+                userAvatar.style.backgroundPosition = 'center';
             }
             
             loadHistory();
