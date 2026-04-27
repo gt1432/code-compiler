@@ -54,6 +54,31 @@ public class CodeController {
         return ResponseEntity.ok(executionResult);
     }
 
+    @PostMapping("/save")
+    public ResponseEntity<?> saveSnippet(
+            @RequestBody ExecuteRequest request,
+            @AuthenticationPrincipal User user
+    ) {
+        Submission submission = Submission.builder()
+                .user(user)
+                .language(request.getLanguage())
+                .code(request.getCode())
+                .input(request.getInput() != null ? request.getInput() : "")
+                .output("Saved manually.")
+                .exitCode(0)
+                .executionTimeMs(0L)
+                .build();
+
+        try {
+            submissionRepository.save(submission);
+        } catch (Exception e) {
+            System.err.println("Database error saving submission: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(java.util.Map.of("error", "Failed to save snippet."));
+        }
+        
+        return ResponseEntity.ok(java.util.Map.of("message", "Snippet saved successfully"));
+    }
+
     @GetMapping("/history")
     public List<Submission> getHistory(
             @AuthenticationPrincipal User user,

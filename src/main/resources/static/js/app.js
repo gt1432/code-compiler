@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const languageSelect = document.getElementById('language-select');
     const runBtn = document.getElementById('run-btn');
+    const saveBtn = document.getElementById('save-btn');
     const clearBtn = document.getElementById('clear-btn');
     const copyBtn = document.getElementById('copy-btn');
     const terminal = document.getElementById('terminal');
@@ -231,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const start = performance.now();
 
         try {
-            const response = await fetch('/api/execute', {
+            const endpoint = isRun ? '/api/execute' : '/api/save';
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -275,6 +277,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     runBtn.onclick = () => performSave(true);
+    if(saveBtn) saveBtn.onclick = () => performSave(false);
+
+    // Global Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            performSave(true);
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            performSave(false);
+        }
+    });
 
     clearBtn.onclick = () => {
         terminal.innerHTML = '<div class="text-brand opacity-80 mb-2">Terminal cleared. Ready for execution.</div>';
