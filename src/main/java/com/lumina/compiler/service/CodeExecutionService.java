@@ -40,7 +40,13 @@ public class CodeExecutionService {
     }
 
     private ExecutionResult executeJava(Path dir, String code, String input) throws IOException, InterruptedException {
-        Path sourceFile = dir.resolve("Main.java");
+        String className = "Main";
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("public\\s+class\\s+([A-Za-z0-9_]+)").matcher(code);
+        if (matcher.find()) {
+            className = matcher.group(1);
+        }
+
+        Path sourceFile = dir.resolve(className + ".java");
         Files.writeString(sourceFile, code);
 
         Process compileProcess = new ProcessBuilder("javac", sourceFile.toString())
@@ -52,7 +58,7 @@ public class CodeExecutionService {
             return new ExecutionResult("", "Compilation Error (Java):\n" + compileRes.error(), compileRes.exitCode());
         }
 
-        Process runProcess = new ProcessBuilder("java", "Main")
+        Process runProcess = new ProcessBuilder("java", className)
                 .directory(dir.toFile())
                 .start();
 
@@ -190,8 +196,8 @@ public class CodeExecutionService {
         Future<?> errReader = executor.submit(() -> readStream(process.getErrorStream(), stderr));
 
         try {
-            if (input != null && !input.isEmpty()) {
-                try (OutputStream os = process.getOutputStream()) {
+            try (OutputStream os = process.getOutputStream()) {
+                if (input != null && !input.isEmpty()) {
                     os.write(input.getBytes());
                     os.flush();
                 }
