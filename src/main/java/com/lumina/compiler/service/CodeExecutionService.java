@@ -69,20 +69,34 @@ public class CodeExecutionService {
     private ExecutionResult executePython(Path dir, String code, String input) throws IOException, InterruptedException {
         Path scriptFile = dir.resolve("script.py");
         Files.writeString(scriptFile, code);
-        // Use 'py' launcher on Windows, fallback to 'python'
-        Process p = new ProcessBuilder("py", scriptFile.toString()).directory(dir.toFile()).start();
+        
+        String os = System.getProperty("os.name").toLowerCase();
+        String pythonCmd = os.contains("win") ? "py" : "python3";
+        
+        // Fallback to 'python' if 'py' or 'python3' is missing
+        try {
+            new ProcessBuilder(pythonCmd, "--version").start().waitFor();
+        } catch (Exception e) {
+            pythonCmd = "python";
+        }
+
+        Process p = new ProcessBuilder(pythonCmd, scriptFile.toString()).directory(dir.toFile()).start();
         return captureOutput(p, input);
+
     }
 
     private ExecutionResult executeC(Path dir, String code, String input) throws IOException, InterruptedException {
+        String os = System.getProperty("os.name").toLowerCase();
+        boolean isWindows = os.contains("win");
         Path sourceFile = dir.resolve("program.c");
-        Path binaryFile = dir.resolve("program.exe");
+        Path binaryFile = dir.resolve(isWindows ? "program.exe" : "program");
         Files.writeString(sourceFile, code);
 
         String gccPath = findCompiler("gcc");
         if (gccPath == null) {
             return new ExecutionResult("", "Error: C compiler (gcc) is not installed or not in the system PATH. Please install GCC to run C programs.", -1);
         }
+
 
         try {
             Process compileProcess = new ProcessBuilder(gccPath, sourceFile.toString(), "-o", binaryFile.toString())
@@ -105,14 +119,17 @@ public class CodeExecutionService {
     }
 
     private ExecutionResult executeCpp(Path dir, String code, String input) throws IOException, InterruptedException {
+        String os = System.getProperty("os.name").toLowerCase();
+        boolean isWindows = os.contains("win");
         Path sourceFile = dir.resolve("program.cpp");
-        Path binaryFile = dir.resolve("program.exe");
+        Path binaryFile = dir.resolve(isWindows ? "program.exe" : "program");
         Files.writeString(sourceFile, code);
 
         String gppPath = findCompiler("g++");
         if (gppPath == null) {
             return new ExecutionResult("", "Error: C++ compiler (g++) is not installed or not in the system PATH. Please install G++ to run C++ programs.", -1);
         }
+
 
         try {
             Process compileProcess = new ProcessBuilder(gppPath, sourceFile.toString(), "-o", binaryFile.toString())
@@ -134,28 +151,34 @@ public class CodeExecutionService {
         }
     }
     private String findCompiler(String compiler) {
+        String os = System.getProperty("os.name").toLowerCase();
+        boolean isWindows = os.contains("win");
+
         // Try standard PATH first
         try {
             Process process = new ProcessBuilder(compiler, "--version").start();
             if (process.waitFor() == 0) return compiler;
         } catch (Exception ignored) {}
 
-        // Try common installation paths including the one we just found
-        String[] commonPaths = {
-            "C:\\Users\\gt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\",
-            "C:\\MinGW\\bin\\",
-            "C:\\msys64\\mingw64\\bin\\",
-            "C:\\msys64\\usr\\bin\\"
-        };
+        if (isWindows) {
+            // Try common installation paths on Windows
+            String[] commonPaths = {
+                "C:\\Users\\gt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\",
+                "C:\\MinGW\\bin\\",
+                "C:\\msys64\\mingw64\\bin\\",
+                "C:\\msys64\\usr\\bin\\"
+            };
 
-        for (String path : commonPaths) {
-            String fullPath = path + compiler + ".exe";
-            if (new java.io.File(fullPath).exists()) {
-                return fullPath;
+            for (String path : commonPaths) {
+                String fullPath = path + compiler + ".exe";
+                if (new java.io.File(fullPath).exists()) {
+                    return fullPath;
+                }
             }
         }
         return null;
     }
+
 
 
     private ExecutionResult captureOutput(Process process, String input) throws IOException, InterruptedException {
