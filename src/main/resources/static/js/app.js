@@ -317,6 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- History Logic ---
     historyFilter.onchange = loadHistory;
 
+    let isFirstLoad = true;
+
     async function loadHistory() {
         if (!token) return;
         const lang = historyFilter.value;
@@ -332,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            data.forEach(sub => {
+            data.forEach((sub, index) => {
                 const item = document.createElement('div');
                 item.className = `history-item ${sub.exitCode === 0 ? 'success' : 'error'}`;
                 item.innerHTML = `
@@ -356,6 +358,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 historyList.appendChild(item);
                 if (typeof lucide !== 'undefined') lucide.createIcons({ root: item });
+
+                // Auto-load most recent snippet on login
+                if (isFirstLoad && index === 0) {
+                    setTimeout(() => item.click(), 500); // Small delay to ensure Monaco is ready
+                    isFirstLoad = false;
+                }
             });
         } catch (err) {
             console.error('History load failed', err);
