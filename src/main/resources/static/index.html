@@ -1,137 +1,280 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina | Professional Online Compiler</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            colors: {
+              brand: '#7c4dff',
+              brandHover: '#651fff',
+              darkBg: '#0d1117',
+              darkSurface: '#161b22',
+              darkBorder: '#30363d',
+              lightBg: '#f6f8fa',
+              lightSurface: '#ffffff',
+              lightBorder: '#d0d7de',
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- App Styles -->
     <link rel="stylesheet" href="css/styles.css">
-    <!-- CodeMirror -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
 </head>
-<body>
-    <!-- Auth Overlay -->
-    <div id="auth-overlay" class="overlay">
-        <div class="auth-card">
-            <div class="logo" style="justify-content: center;">
-                <img src="/assets/logo.png" alt="Lumina Logo" style="width: 40px; height: 40px;">
-                <span>Lumina Code</span>
-            </div>
-            <div id="login-form">
-                <h2>Welcome Back</h2>
-                <input type="text" id="login-username" placeholder="Username">
-                <input type="password" id="login-password" placeholder="Password">
-                <button id="login-btn" class="primary w-100">Login</button>
-                <p>Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
-            </div>
-            <div id="signup-form" style="display: none;">
-                <h2>Create Account</h2>
-                <input type="text" id="signup-username" placeholder="Username">
-                <input type="password" id="signup-password" placeholder="Password">
-                
-                <div class="avatar-selection">
-                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Select Your Avatar</p>
-                    <div class="avatar-grid" id="avatar-options">
-                        <!-- Male Avatars (1-5) -->
-                        <div class="avatar-opt" data-avatar="m1" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m1&backgroundColor=b6e3f4');"></div>
-                        <div class="avatar-opt" data-avatar="m2" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m2&backgroundColor=c0aede');"></div>
-                        <div class="avatar-opt" data-avatar="m3" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m3&backgroundColor=d1d4f9');"></div>
-                        <div class="avatar-opt" data-avatar="m4" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m4&backgroundColor=ffd5dc');"></div>
-                        <div class="avatar-opt" data-avatar="m5" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m5&backgroundColor=ffdfbf');"></div>
-                        <!-- Female Avatars (1-5) -->
-                        <div class="avatar-opt" data-avatar="f1" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f1&backgroundColor=ffdfbf');"></div>
-                        <div class="avatar-opt" data-avatar="f2" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f2&backgroundColor=ffd5dc');"></div>
-                        <div class="avatar-opt" data-avatar="f3" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f3&backgroundColor=d1d4f9');"></div>
-                        <div class="avatar-opt" data-avatar="f4" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f4&backgroundColor=c0aede');"></div>
-                        <div class="avatar-opt" data-avatar="f5" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f5&backgroundColor=b6e3f4');"></div>
-                    </div>
-                </div>
+<body class="bg-lightBg dark:bg-darkBg text-gray-800 dark:text-gray-200 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-300">
 
-                <button id="signup-submit-btn" class="primary w-100">Sign Up</button>
-                <p>Already have an account? <a href="#" id="show-login">Login</a></p>
-            </div>
-            <div id="auth-error" class="error-text" style="display: none; margin-top: 10px; text-align: center;"></div>
-        </div>
-    </div>
-
-    <aside>
-        <div class="logo">
-            <img src="/assets/logo.png" alt="Lumina Logo" style="width: 32px; height: 32px;">
-            <span>Lumina Code</span>
+    <!-- Navbar -->
+    <header class="h-16 border-b border-lightBorder dark:border-darkBorder bg-lightSurface dark:bg-darkSurface flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
+        <div class="flex items-center gap-3">
+            <img src="/assets/logo.png" alt="Lumina Logo" class="w-9 h-9 rounded-md shadow-sm">
+            <span class="font-bold text-xl tracking-tight text-gray-900 dark:text-white">Lumina Code</span>
         </div>
         
-        <div class="user-profile">
-            <div id="user-avatar" class="avatar-small"></div>
-            <div class="profile-info">
-                <span id="display-username">Not Logged In</span>
-                <button id="logout-btn" class="btn-sm">Logout</button>
-            </div>
+        <div class="flex items-center gap-4 bg-lightBg dark:bg-darkBg p-1.5 rounded-lg border border-lightBorder dark:border-darkBorder shadow-sm">
+            <select id="language-select" class="bg-transparent text-gray-800 dark:text-gray-200 text-sm font-medium pl-3 pr-8 py-1.5 outline-none cursor-pointer appearance-none">
+                <option value="java" class="bg-lightSurface dark:bg-darkSurface">Java 21</option>
+                <option value="python" class="bg-lightSurface dark:bg-darkSurface">Python 3</option>
+                <option value="c" class="bg-lightSurface dark:bg-darkSurface">C (GCC)</option>
+                <option value="cpp" class="bg-lightSurface dark:bg-darkSurface">C++ (G++)</option>
+            </select>
+            <div class="w-px h-5 bg-lightBorder dark:bg-darkBorder"></div>
+            <button id="run-btn" class="bg-brand hover:bg-brandHover text-white px-5 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(124,77,255,0.4)] hover:shadow-[0_0_20px_rgba(124,77,255,0.6)] hover:-translate-y-0.5">
+                <i data-lucide="play" class="w-4 h-4 fill-white"></i> Run <span class="hidden sm:inline">(Ctrl+Enter)</span>
+            </button>
+            <button id="save-btn" class="hidden"></button>
+            <div id="save-status" class="text-xs text-gray-500 dark:text-gray-400 hidden absolute top-full mt-2">Saving...</div>
         </div>
 
-        <div class="sidebar-section">
-            <h3>Execution History</h3>
-            <div class="filter-controls">
-                <select id="history-lang-filter">
-                    <option value="">All Languages</option>
-                    <option value="java">Java</option>
-                    <option value="python">Python</option>
-                    <option value="c">C</option>
-                    <option value="cpp">C++</option>
-                </select>
-            </div>
-            <div id="history-list">
-                <!-- Submissions will be loaded here -->
-            </div>
-        </div>
-        <div class="footer-info">
-            v1.1.0 | Scalable & Secure
-        </div>
-    </aside>
-
-    <main>
-        <header>
-            <div class="controls">
-                <select id="language-select">
-                    <option value="java">Java 21</option>
-                    <option value="python">Python 3</option>
-                    <option value="c">C (GCC)</option>
-                </select>
-                <div id="save-status" style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center;"></div>
-            </div>
-            <div class="actions">
-                <button id="clear-btn">Clear Output</button>
-                <button id="save-btn">Save Snippet</button>
-                <button id="run-btn" class="primary">Run Code</button>
-            </div>
-        </header>
-
-        <div class="workspace">
-            <div id="editor-container">
-                <textarea id="editor"></textarea>
-            </div>
-            <div id="output-panel">
-                <div class="panel-header">
-                    <span>TERMINAL / OUTPUT</span>
-                    <span id="exec-info"></span>
+        <div class="flex items-center gap-5">
+            <button id="theme-toggle" class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors" title="Toggle Theme">
+                <i data-lucide="sun" id="theme-icon" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="w-px h-6 bg-lightBorder dark:bg-darkBorder hidden sm:block"></div>
+            
+            <div class="user-profile flex items-center gap-3 group relative cursor-pointer">
+                <div id="user-avatar" class="w-9 h-9 rounded-full bg-cover bg-center border-2 border-brand shadow-sm"></div>
+                <div class="flex flex-col hidden sm:flex">
+                    <span id="display-username" class="text-sm font-semibold text-gray-900 dark:text-gray-100">Guest</span>
+                    <span class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">Free Plan</span>
                 </div>
-                <div id="terminal">
-                    <div class="output-line">Welcome to Lumina Code. Select a language and start coding.</div>
+                
+                <!-- Dropdown Menu -->
+                <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-darkSurface border border-lightBorder dark:border-darkBorder rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden transform origin-top-right scale-95 group-hover:scale-100">
+                    <button id="logout-btn" class="w-full text-left px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-darkBg transition-colors flex items-center gap-2">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                    </button>
                 </div>
-                <div id="input-area">
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 5px; display: flex; justify-content: space-between;">
-                        <span>STDIN (Input)</span>
-                        <span style="opacity: 0.6;">Program reads from here</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Sidebar (History) -->
+        <aside class="w-72 border-r border-lightBorder dark:border-darkBorder bg-lightSurface dark:bg-darkSurface flex flex-col shrink-0 transition-colors duration-300">
+            <div class="p-4 border-b border-lightBorder dark:border-darkBorder flex items-center justify-between">
+                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="history" class="w-4 h-4"></i> History
+                </h3>
+            </div>
+            <div class="p-3">
+                <div class="relative">
+                    <i data-lucide="filter" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <select id="history-lang-filter" class="w-full bg-lightBg dark:bg-darkBg border border-lightBorder dark:border-darkBorder rounded-md pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-brand transition-colors appearance-none cursor-pointer">
+                        <option value="">All Languages</option>
+                        <option value="java">Java</option>
+                        <option value="python">Python</option>
+                        <option value="c">C</option>
+                        <option value="cpp">C++</option>
+                    </select>
+                </div>
+            </div>
+            <div id="history-list" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+                <!-- Submissions injected here -->
+                <div class="text-center text-sm text-gray-400 mt-10">No execution history yet.</div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-4 border-t border-lightBorder dark:border-darkBorder text-center">
+                <p class="text-[11px] text-gray-500 dark:text-gray-500 font-medium tracking-wide">Lumina Code v2.0 &bull; Secure</p>
+                <div class="flex justify-center gap-3 mt-2">
+                    <a href="#" class="text-gray-400 hover:text-brand transition-colors"><i data-lucide="github" class="w-4 h-4"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-brand transition-colors"><i data-lucide="twitter" class="w-4 h-4"></i></a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Editor & Terminal Area -->
+        <div class="flex-1 flex flex-col min-w-0">
+            
+            <!-- Editor Section -->
+            <div class="flex-1 relative border-b border-lightBorder dark:border-darkBorder flex flex-col">
+                <!-- Editor Toolbar -->
+                <div class="h-9 bg-lightSurface dark:bg-darkSurface border-b border-lightBorder dark:border-darkBorder flex items-center px-4">
+                    <div class="flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-400/80"></div>
+                        <div class="w-3 h-3 rounded-full bg-amber-400/80"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-400/80"></div>
                     </div>
-                    <textarea id="stdin" placeholder="Enter program input here..."></textarea>
+                    <span class="ml-4 text-xs font-mono text-gray-500 dark:text-gray-400" id="current-file-name">Main.java</span>
+                </div>
+                
+                <!-- Monaco Editor Container -->
+                <div id="editor-container" class="flex-1 w-full bg-white dark:bg-[#1e1e1e]"></div>
+                <textarea id="editor" class="hidden"></textarea>
+                
+                <!-- Loading Overlay -->
+                <div id="loading-overlay" class="absolute inset-0 bg-white/60 dark:bg-darkBg/60 backdrop-blur-sm flex flex-col items-center justify-center z-10 opacity-0 pointer-events-none transition-opacity duration-200">
+                    <div class="bg-white dark:bg-darkSurface p-6 rounded-xl shadow-2xl border border-lightBorder dark:border-darkBorder flex flex-col items-center">
+                        <i data-lucide="loader-2" class="w-10 h-10 text-brand animate-spin mb-3"></i>
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Compiling & Executing...</span>
+                        <span class="text-xs text-gray-500 mt-1">This usually takes a few seconds</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal/Output Section -->
+            <div class="h-72 flex flex-col bg-[#f8f9fa] dark:bg-[#0a0a0a] transition-colors duration-300">
+                <!-- Terminal Header -->
+                <div class="h-10 border-b border-lightBorder dark:border-darkBorder flex items-center justify-between px-4 bg-gray-100 dark:bg-[#111] transition-colors duration-300">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="terminal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest">Output</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="exec-info" class="text-[11px] font-mono text-gray-500 mr-2 bg-gray-200 dark:bg-darkBorder px-2 py-0.5 rounded hidden">0ms</span>
+                        <button id="copy-btn" class="p-1.5 text-gray-500 hover:text-brand hover:bg-gray-200 dark:hover:bg-darkBorder rounded transition-colors group" title="Copy Output">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                        <button id="clear-btn" class="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors group" title="Clear Terminal">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Terminal Body -->
+                <div class="flex-1 flex overflow-hidden">
+                    <div id="terminal" class="flex-1 overflow-y-auto p-5 font-mono text-[13px] leading-relaxed text-gray-800 dark:text-gray-300 whitespace-pre-wrap custom-scrollbar">
+                        <div class="text-brand opacity-80 mb-2">Welcome to Lumina Code v2.0. Ready to compile.</div>
+                    </div>
+                    
+                    <!-- STDIN Panel -->
+                    <div class="w-72 border-l border-lightBorder dark:border-darkBorder p-4 flex flex-col bg-white dark:bg-darkSurface transition-colors duration-300 shrink-0">
+                        <label for="stdin" class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <i data-lucide="keyboard" class="w-4 h-4"></i> Custom Input
+                        </label>
+                        <textarea id="stdin" class="flex-1 w-full bg-lightBg dark:bg-darkBg border border-lightBorder dark:border-darkBorder rounded-lg p-3 text-[13px] font-mono text-gray-800 dark:text-gray-200 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all resize-none custom-scrollbar shadow-inner" placeholder="Enter program STDIN here..."></textarea>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- Authentication Overlay Modal -->
+    <div id="auth-overlay" class="fixed inset-0 bg-gray-900/80 dark:bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="auth-card bg-white dark:bg-darkSurface w-full max-w-md p-8 rounded-2xl shadow-2xl border border-lightBorder dark:border-darkBorder relative overflow-hidden">
+            <!-- Decorative blur -->
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-brand/20 blur-3xl rounded-full"></div>
+            
+            <div class="flex items-center justify-center gap-3 mb-8 relative">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-brand to-purple-400 p-2 shadow-lg shadow-brand/30">
+                    <img src="/assets/logo.png" alt="Logo" class="w-full h-full object-contain filter drop-shadow-md">
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Lumina Code</h2>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6 text-center">Welcome Back</h3>
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="login-username" placeholder="Username" class="w-full bg-lightBg dark:bg-darkBg border border-lightBorder dark:border-darkBorder text-gray-900 dark:text-white px-4 py-3 rounded-xl outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all placeholder-gray-400">
+                    </div>
+                    <div>
+                        <input type="password" id="login-password" placeholder="Password" class="w-full bg-lightBg dark:bg-darkBg border border-lightBorder dark:border-darkBorder text-gray-900 dark:text-white px-4 py-3 rounded-xl outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all placeholder-gray-400">
+                    </div>
+                    <button id="login-btn" class="w-full bg-brand hover:bg-brandHover text-white font-semibold py-3 rounded-xl shadow-lg shadow-brand/25 hover:shadow-brand/40 hover:-translate-y-0.5 transition-all mt-2">
+                        Sign In
+                    </button>
+                </div>
+                <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+                    Don't have an account? <a href="#" id="show-signup" class="text-brand font-semibold hover:underline">Create one</a>
+                </p>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signup-form" class="hidden">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6 text-center">Create Account</h3>
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="signup-username" placeholder="Choose Username" class="w-full bg-lightBg dark:bg-darkBg border border-lightBorder dark:border-darkBorder text-gray-900 dark:text-white px-4 py-3 rounded-xl outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all placeholder-gray-400">
+                    </div>
+                    <div>
+                        <input type="password" id="signup-password" placeholder="Choose Password" class="w-full bg-lightBg dark:bg-darkBg border border-lightBorder dark:border-darkBorder text-gray-900 dark:text-white px-4 py-3 rounded-xl outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all placeholder-gray-400">
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Select Avatar</p>
+                        <div class="grid grid-cols-5 gap-2" id="avatar-options">
+                            <!-- Populated in JS or static -->
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="m1" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m1&backgroundColor=b6e3f4');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="m2" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m2&backgroundColor=c0aede');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="m3" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m3&backgroundColor=d1d4f9');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="m4" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m4&backgroundColor=ffd5dc');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="m5" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=m5&backgroundColor=ffdfbf');"></div>
+                            
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="f1" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f1&backgroundColor=ffdfbf');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="f2" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f2&backgroundColor=ffd5dc');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="f3" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f3&backgroundColor=d1d4f9');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="f4" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f4&backgroundColor=c0aede');"></div>
+                            <div class="avatar-opt w-full aspect-square rounded-full bg-cover bg-center cursor-pointer border-2 border-transparent hover:scale-110 transition-transform" data-avatar="f5" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=f5&backgroundColor=b6e3f4');"></div>
+                        </div>
+                    </div>
+
+                    <button id="signup-submit-btn" class="w-full bg-brand hover:bg-brandHover text-white font-semibold py-3 rounded-xl shadow-lg shadow-brand/25 hover:shadow-brand/40 hover:-translate-y-0.5 transition-all mt-4">
+                        Create Account
+                    </button>
+                </div>
+                <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+                    Already have an account? <a href="#" id="show-login" class="text-brand font-semibold hover:underline">Sign in</a>
+                </p>
+            </div>
+
+            <!-- Error message container -->
+            <div id="auth-error" class="hidden mt-4 p-3 bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg text-sm text-red-600 dark:text-red-400 text-center font-medium"></div>
+        </div>
+    </div>
+
     <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
     <script src="js/app.js"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+    </script>
 </body>
 </html>
