@@ -199,6 +199,9 @@ public class CodeExecutionService {
             try (OutputStream os = process.getOutputStream()) {
                 if (input != null && !input.isEmpty()) {
                     os.write(input.getBytes());
+                    if (!input.endsWith("\n")) {
+                        os.write("\n".getBytes());
+                    }
                     os.flush();
                 }
             }
