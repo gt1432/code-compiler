@@ -436,10 +436,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const editorSection = document.getElementById('editor-section');
     const resizerVertical = document.getElementById('resizer-vertical');
-    const terminalSection = document.getElementById('terminal-section');
-    
-    const resizerStdin = document.getElementById('resizer-stdin');
-    const stdinPanel = document.getElementById('stdin-panel');
 
     // 1. Sidebar Resizer
     if (resizerSidebar && sidebarSection) {
