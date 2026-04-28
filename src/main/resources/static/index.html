@@ -96,7 +96,7 @@
     <main class="flex-1 flex overflow-hidden">
         
         <!-- Left Sidebar (History) -->
-        <aside class="w-72 border-r border-lightBorder dark:border-darkBorder bg-lightSurface dark:bg-darkSurface flex flex-col shrink-0 transition-colors duration-300">
+        <aside id="sidebar-section" class="w-72 border-r border-lightBorder dark:border-darkBorder bg-lightSurface dark:bg-darkSurface flex flex-col shrink-0 transition-colors duration-300 min-w-[200px]">
             <div class="p-4 border-b border-lightBorder dark:border-darkBorder flex items-center justify-between">
                 <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
                     <i data-lucide="history" class="w-4 h-4"></i> History
@@ -129,11 +129,14 @@
             </div>
         </aside>
 
+        <!-- Horizontal Resizer 1 (Sidebar) -->
+        <div id="resizer-sidebar" class="w-1 cursor-col-resize bg-lightBorder dark:bg-darkBorder hover:bg-brand dark:hover:bg-brand transition-colors z-20 shrink-0"></div>
+
         <!-- Editor & Terminal Area -->
         <div class="flex-1 flex flex-col min-w-0">
             
             <!-- Editor Section -->
-            <div class="flex-1 relative border-b border-lightBorder dark:border-darkBorder flex flex-col">
+            <div id="editor-section" class="flex-1 relative border-b border-lightBorder dark:border-darkBorder flex flex-col min-h-[100px]">
                 <!-- Editor Toolbar -->
                 <div class="h-9 bg-lightSurface dark:bg-darkSurface border-b border-lightBorder dark:border-darkBorder flex items-center px-4">
                     <div class="flex gap-2">
@@ -158,8 +161,11 @@
                 </div>
             </div>
 
+            <!-- Vertical Resizer -->
+            <div id="resizer-vertical" class="h-1 cursor-row-resize bg-lightBorder dark:bg-darkBorder hover:bg-brand dark:hover:bg-brand transition-colors z-20 shrink-0"></div>
+
             <!-- Terminal/Output Section -->
-            <div class="h-72 flex flex-col bg-[#f8f9fa] dark:bg-[#0a0a0a] transition-colors duration-300">
+            <div id="terminal-section" class="h-72 flex flex-col bg-[#f8f9fa] dark:bg-[#0a0a0a] transition-colors duration-300 min-h-[100px]">
                 <!-- Terminal Header -->
                 <div class="h-10 border-b border-lightBorder dark:border-darkBorder flex items-center justify-between px-4 bg-gray-100 dark:bg-[#111] transition-colors duration-300">
                     <div class="flex items-center gap-3">
@@ -179,12 +185,17 @@
                 
                 <!-- Terminal Body -->
                 <div class="flex-1 flex overflow-hidden">
-                    <div id="terminal" class="flex-1 overflow-y-auto p-5 font-mono text-[13px] leading-relaxed text-gray-800 dark:text-gray-300 whitespace-pre-wrap custom-scrollbar">
-                        <div class="text-brand opacity-80 mb-2">Welcome to Lumina Code v2.0. Ready to compile.</div>
+                    <div id="terminal-output" class="flex-1 flex flex-col overflow-y-auto p-5 font-mono text-[13px] leading-relaxed text-gray-800 dark:text-gray-300 whitespace-pre-wrap custom-scrollbar min-w-[200px]">
+                        <div id="terminal" class="flex-1">
+                            <div class="text-brand opacity-80 mb-2">Welcome to Lumina Code v2.0. Ready to compile.</div>
+                        </div>
                     </div>
                     
+                    <!-- Horizontal Resizer 2 (STDIN) -->
+                    <div id="resizer-stdin" class="w-1 cursor-col-resize bg-lightBorder dark:bg-darkBorder hover:bg-brand dark:hover:bg-brand transition-colors z-10 shrink-0"></div>
+
                     <!-- STDIN Panel -->
-                    <div class="w-72 border-l border-lightBorder dark:border-darkBorder p-4 flex flex-col bg-white dark:bg-darkSurface transition-colors duration-300 shrink-0">
+                    <div id="stdin-panel" class="w-72 border-l border-lightBorder dark:border-darkBorder p-4 flex flex-col bg-white dark:bg-darkSurface transition-colors duration-300 shrink-0 min-w-[150px]">
                         <label for="stdin" class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                             <i data-lucide="keyboard" class="w-4 h-4"></i> Custom Input
                         </label>

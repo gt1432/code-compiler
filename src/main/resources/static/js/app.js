@@ -378,6 +378,101 @@ document.addEventListener('DOMContentLoaded', () => {
         terminal.scrollTop = terminal.scrollHeight;
     }
 
+    // --- Resizable Panels Logic ---
+    const sidebarSection = document.getElementById('sidebar-section');
+    const resizerSidebar = document.getElementById('resizer-sidebar');
+    
+    const editorSection = document.getElementById('editor-section');
+    const resizerVertical = document.getElementById('resizer-vertical');
+    const terminalSection = document.getElementById('terminal-section');
+    
+    const resizerStdin = document.getElementById('resizer-stdin');
+    const stdinPanel = document.getElementById('stdin-panel');
+
+    // 1. Sidebar Resizer
+    if (resizerSidebar && sidebarSection) {
+        let isResizing = false;
+        resizerSidebar.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const newWidth = e.clientX;
+            if (newWidth > 200 && newWidth < 600) {
+                sidebarSection.style.width = `${newWidth}px`;
+                if(editorInstance) editorInstance.layout();
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+            }
+        });
+    }
+
+    // 2. Vertical Resizer
+    if (resizerVertical && editorSection && terminalSection) {
+        let isResizing = false;
+        resizerVertical.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'row-resize';
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerHeight = editorSection.parentElement.getBoundingClientRect().height;
+            const containerTop = editorSection.parentElement.getBoundingClientRect().top;
+            const newHeight = e.clientY - containerTop;
+            
+            if (newHeight > 100 && newHeight < containerHeight - 100) {
+                editorSection.style.flex = 'none';
+                editorSection.style.height = `${newHeight}px`;
+                terminalSection.style.flex = '1';
+                terminalSection.style.height = 'auto';
+                if(editorInstance) editorInstance.layout();
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+            }
+        });
+    }
+
+    // 3. STDIN Resizer
+    if (resizerStdin && stdinPanel && terminalSection) {
+        let isResizing = false;
+        resizerStdin.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerRight = terminalSection.getBoundingClientRect().right;
+            const newWidth = containerRight - e.clientX;
+            
+            if (newWidth > 150 && newWidth < 800) {
+                stdinPanel.style.width = `${newWidth}px`;
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+            }
+        });
+    }
+
+    // Auto-layout Monaco on window resize
+    window.addEventListener('resize', () => {
+        if (editorInstance) editorInstance.layout();
+    });
+
     // Init
     updateAuthUI();
 });
