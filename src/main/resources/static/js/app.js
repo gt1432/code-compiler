@@ -22,8 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.getElementById('save-btn');
     const clearBtn = document.getElementById('clear-btn');
     const copyBtn = document.getElementById('copy-btn');
-    const terminal = document.getElementById('terminal');
-    const stdin = document.getElementById('stdin');
+    const terminalSection = document.getElementById('terminal-section');
     const execInfo = document.getElementById('exec-info');
     const loadingOverlay = document.getElementById('loading-overlay');
     const themeToggle = document.getElementById('theme-toggle');
@@ -31,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentFileName = document.getElementById('current-file-name');
 
     let editorInstance = null;
+    let term = null;
+    let fitAddon = null;
 
     const snippets = {
         java: "// Write your Java code here\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Lumina!\");\n    }\n}",
@@ -112,6 +113,24 @@ document.addEventListener('DOMContentLoaded', () => {
             performSave(true);
         });
     });
+
+    // --- xterm.js Initialization ---
+    term = new Terminal({
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 13,
+        theme: {
+            background: '#000000',
+            foreground: '#d4d4d4',
+            cursor: '#7c4dff'
+        },
+        cursorBlink: true
+    });
+    fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('xterm-container'));
+    fitAddon.fit();
+    term.writeln('\x1b[35mWelcome to Lumina Code v2.0 Interactive Terminal.\x1b[0m');
+    term.writeln('Ready to compile and run your code.');
 
     // --- Authentication Logic ---
     function updateAuthUI() {
@@ -219,61 +238,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const code = editorInstance.getValue();
         const language = languageSelect.value;
-        const input = stdin.value;
 
-        if (isRun) appendToTerminal(`>>> Loading ${language.toUpperCase()} environment...`, 'info');
-        else appendToTerminal(`>>> Saving code snippet...`, 'info');
-        
-        runBtn.disabled = true;
-        // Show loading spinner
-        loadingOverlay.classList.remove('opacity-0', 'pointer-events-none');
-        loadingOverlay.classList.add('opacity-100');
-        
-        const start = performance.now();
+        if (!isRun) {
+            // Save logic
+            loadingOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            loadingOverlay.classList.add('opacity-100');
+            try {
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ code, language, input: "" })
+                });
 
-        try {
-            const endpoint = isRun ? '/api/execute' : '/api/save';
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ code, language, input })
-            });
+                if (response.status === 403 || response.status === 401) {
+                    logoutBtn.click(); 
+                    return;
+                }
 
-            if (response.status === 403 || response.status === 401) {
-                logoutBtn.click(); 
-                return;
+                if (!response.ok) {
+                    term.writeln(`\r\n\x1b[31mServer Error (${response.status})\x1b[0m`);
+                    return;
+                }
+
+                term.writeln('\r\n\x1b[32mSnippet saved successfully!\x1b[0m');
+                loadHistory(); 
+            } catch (err) {
+                term.writeln(`\r\n\x1b[31mOperation failed: ${err.message}\x1b[0m`);
+            } finally {
+                loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
+                loadingOverlay.classList.remove('opacity-100');
             }
-
-            if (!response.ok) {
-                const errData = await response.text();
-                appendToTerminal(`Server Error (${response.status}): ${errData}`, 'error');
-                return;
-            }
-
-            const result = await response.json();
-            const end = performance.now();
-            execInfo.innerText = `${Math.round(end - start)}ms`;
-            execInfo.classList.remove('hidden');
-
-            if (isRun) {
-                if (result.error) appendToTerminal(result.error, 'error');
-                if (result.output) appendToTerminal(result.output, 'success');
-            } else {
-                appendToTerminal('Snippet saved successfully!', 'success');
-            }
-            
-            loadHistory(); // Refresh history
-        } catch (err) {
-            appendToTerminal(`Operation failed: ${err.message}`, 'error');
-        } finally {
-            runBtn.disabled = false;
-            // Hide loading spinner
-            loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
-            loadingOverlay.classList.remove('opacity-100');
+            return;
         }
+
+        // Run logic via WebSocket
+        runBtn.disabled = true;
+        term.clear();
+        term.writeln(`\x1b[34m>>> Loading ${language.toUpperCase()} environment...\x1b[0m`);
+
+        // Track history silently
+        fetch('/api/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ code, language, input: "" })
+        }).then(() => loadHistory());
+
+        if (window.activeSocket) {
+            window.activeSocket.close();
+        }
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/execute`);
+        window.activeSocket = ws;
+
+        ws.onopen = () => {
+            term.writeln('\x1b[32mConnected to server. Compiling...\x1b[0m');
+            ws.send(JSON.stringify({ code, language }));
+            
+            if (window.termDataListener) window.termDataListener.dispose();
+            window.termDataListener = term.onData(data => {
+                let sendData = data;
+                if (data === '\r') {
+                    sendData = '\n';
+                    term.write('\r\n');
+                } else if (data === '\x7F') {
+                    term.write('\b \b');
+                } else {
+                    term.write(data);
+                }
+                ws.send(sendData);
+            });
+        };
+
+        ws.onmessage = (event) => {
+            term.write(event.data);
+        };
+
+        ws.onclose = () => {
+            if (window.termDataListener) window.termDataListener.dispose();
+            term.writeln('\r\n\x1b[33m[Disconnected from server]\x1b[0m');
+            runBtn.disabled = false;
+        };
+
+        ws.onerror = (err) => {
+            term.writeln('\r\n\x1b[31m[WebSocket Error Occurred]\x1b[0m');
+            runBtn.disabled = false;
+        };
     }
 
     runBtn.onclick = () => performSave(true);
@@ -292,13 +345,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     clearBtn.onclick = () => {
-        terminal.innerHTML = '<div class="text-brand opacity-80 mb-2">Terminal cleared. Ready for execution.</div>';
+        term.clear();
+        term.writeln('\x1b[35mTerminal cleared. Ready for execution.\x1b[0m');
         execInfo.classList.add('hidden');
     };
 
     copyBtn.onclick = async () => {
         try {
-            await navigator.clipboard.writeText(terminal.innerText);
+            if (term.hasSelection()) {
+                await navigator.clipboard.writeText(term.getSelection());
+            } else {
+                term.selectAll();
+                await navigator.clipboard.writeText(term.getSelection());
+                term.clearSelection();
+            }
             
             // Temporary icon change for feedback
             const originalIcon = copyBtn.innerHTML;
@@ -351,9 +411,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentFileName.innerText = fileNames[sub.language] || 'script';
                     if (editorInstance) monaco.editor.setModelLanguage(editorInstance.getModel(), monacoModes[sub.language]);
                     
-                    stdin.value = sub.input || '';
                     if (sub.output) {
-                        appendToTerminal(sub.output, sub.exitCode === 0 ? 'success' : 'error');
+                        term.writeln(`\r\n\x1b[34m--- History Output ---\x1b[0m\r\n`);
+                        term.write(sub.output.replace(/\n/g, '\r\n'));
                     }
                 };
                 historyList.appendChild(item);
@@ -368,14 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error('History load failed', err);
         }
-    }
-
-    function appendToTerminal(text, type) {
-        const div = document.createElement('div');
-        div.className = 'mb-1 ' + (type === 'error' ? 'text-red-500' : type === 'success' ? 'text-gray-800 dark:text-gray-300' : 'text-brand');
-        div.innerText = text;
-        terminal.appendChild(div);
-        terminal.scrollTop = terminal.scrollHeight;
     }
 
     // --- Resizable Panels Logic ---
@@ -439,31 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isResizing) {
                 isResizing = false;
                 document.body.style.cursor = '';
-            }
-        });
-    }
-
-    // 3. STDIN Resizer
-    if (resizerStdin && stdinPanel && terminalSection) {
-        let isResizing = false;
-        resizerStdin.addEventListener('mousedown', (e) => {
-            isResizing = true;
-            document.body.style.cursor = 'col-resize';
-            e.preventDefault();
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
-            const containerRight = terminalSection.getBoundingClientRect().right;
-            const newWidth = containerRight - e.clientX;
-            
-            if (newWidth > 150 && newWidth < 800) {
-                stdinPanel.style.width = `${newWidth}px`;
-            }
-        });
-        document.addEventListener('mouseup', () => {
-            if (isResizing) {
-                isResizing = false;
-                document.body.style.cursor = '';
+                if (fitAddon) fitAddon.fit();
             }
         });
     }
@@ -471,6 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-layout Monaco on window resize
     window.addEventListener('resize', () => {
         if (editorInstance) editorInstance.layout();
+        if (fitAddon) fitAddon.fit();
     });
 
     // Init
