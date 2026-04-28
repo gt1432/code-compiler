@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentFileName = document.getElementById('current-file-name');
 
     let editorInstance = null;
-    let isSaved = true; // Track if the current code/input is saved
 
     const snippets = {
         java: "// Write your Java code here\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Lumina!\");\n    }\n}",
@@ -111,11 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add Ctrl+Enter Shortcut
         editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function() {
             performSave(true);
-        });
-
-        // Mark as unsaved when code changes
-        editorInstance.onDidChangeModelContent(() => {
-            isSaved = false;
         });
     });
 
@@ -217,21 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
             monaco.editor.setModelLanguage(editorInstance.getModel(), mode);
             editorInstance.setValue(snippets[lang] || '');
         }
-        isSaved = false;
-    });
-
-    stdin.addEventListener('input', () => {
-        isSaved = false;
     });
 
     async function performSave(isRun = true) {
         if (!token) return updateAuthUI();
         if (!editorInstance) return;
-
-        if (isRun && !isSaved) {
-            appendToTerminal(`Error: You must save the file before executing the program. Please click 'Save' first.`, 'error');
-            return;
-        }
 
         const code = editorInstance.getValue();
         const language = languageSelect.value;
@@ -278,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.error) appendToTerminal(result.error, 'error');
                 if (result.output) appendToTerminal(result.output, 'success');
             } else {
-                isSaved = true;
                 appendToTerminal('Snippet saved successfully!', 'success');
             }
             
@@ -356,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.className = `history-item ${sub.exitCode === 0 ? 'success' : 'error'}`;
                 item.innerHTML = `
                     <div class="lang-badge">${sub.language}</div>
-                    <strong class="text-[13px] text-gray-800 dark:text-gray-200 block mb-1">Code from ${new Date(sub.createdAt).toLocaleTimeString()}</strong>
+                    <strong class="text-[13px] text-gray-800 dark:text-gray-200 block mb-1">Code from ${sub.createdAt ? new Date(sub.createdAt).toLocaleString() : 'Just now'}</strong>
                     <div class="meta">
                         <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${sub.executionTimeMs}ms</span>
                         <span class="font-mono bg-lightBg dark:bg-darkBg px-1.5 py-0.5 rounded opacity-70">${sub.code.substring(0, 10).replace(/\n/g, ' ')}...</span>
@@ -372,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (sub.output) {
                         appendToTerminal(sub.output, sub.exitCode === 0 ? 'success' : 'error');
                     }
-                    isSaved = true;
                 };
                 historyList.appendChild(item);
                 if (typeof lucide !== 'undefined') lucide.createIcons({ root: item });
