@@ -143,6 +143,7 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
             int length;
             while ((length = is.read(buffer)) != -1) {
                 if (!session.isOpen()) break;
+                String text = new String(buffer, 0, length);
                 text = text.replace("\r\n", "\n").replace("\n", "\r\n");
                 synchronized (session) {
                     if (session.isOpen()) {
