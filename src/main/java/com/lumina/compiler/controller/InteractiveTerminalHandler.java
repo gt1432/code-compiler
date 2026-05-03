@@ -170,11 +170,14 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
                 .directory(dir.toFile())
                 .start();
         
+        String compileOutput = new String(compileProcess.getInputStream().readAllBytes());
         String compileError = new String(compileProcess.getErrorStream().readAllBytes());
+        String fullOutput = compileOutput + compileError;
+
         if (compileProcess.waitFor() != 0) {
             synchronized (ws) {
                 if (ws.isOpen()) {
-                    ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+                    ws.sendMessage(new TextMessage("Compilation Error (Java):\r\n" + fullOutput.replace("\n", "\r\n")));
                 }
             }
             return null;
@@ -220,11 +223,14 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
                 .directory(dir.toFile())
                 .start();
         
+        String compileOutput = new String(compileProcess.getInputStream().readAllBytes());
         String compileError = new String(compileProcess.getErrorStream().readAllBytes());
+        String fullOutput = compileOutput + compileError;
+
         if (compileProcess.waitFor() != 0) {
             synchronized (ws) {
                 if (ws.isOpen()) {
-                    ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+                    ws.sendMessage(new TextMessage("Compilation Error (C):\r\n" + fullOutput.replace("\n", "\r\n")));
                 }
             }
             return null;
@@ -249,11 +255,14 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
                 .directory(dir.toFile())
                 .start();
         
+        String compileOutput = new String(compileProcess.getInputStream().readAllBytes());
         String compileError = new String(compileProcess.getErrorStream().readAllBytes());
+        String fullOutput = compileOutput + compileError;
+
         if (compileProcess.waitFor() != 0) {
             synchronized (ws) {
                 if (ws.isOpen()) {
-                    ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+                    ws.sendMessage(new TextMessage("Compilation Error (C++):\r\n" + fullOutput.replace("\n", "\r\n")));
                 }
             }
             return null;
