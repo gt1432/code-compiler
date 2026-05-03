@@ -105,7 +105,7 @@ public class CodeExecutionService {
 
 
         try {
-            Process compileProcess = new ProcessBuilder(gccPath, sourceFile.toString(), "-o", binaryFile.toString())
+            Process compileProcess = new ProcessBuilder(gccPath, sourceFile.toString(), "-o", binaryFile.toString(), "-lm")
                     .directory(dir.toFile())
                     .start();
             
@@ -138,7 +138,7 @@ public class CodeExecutionService {
 
 
         try {
-            Process compileProcess = new ProcessBuilder(gppPath, sourceFile.toString(), "-o", binaryFile.toString())
+            Process compileProcess = new ProcessBuilder(gppPath, sourceFile.toString(), "-o", binaryFile.toString(), "-lm")
                     .directory(dir.toFile())
                     .start();
             
@@ -167,13 +167,16 @@ public class CodeExecutionService {
         } catch (Exception ignored) {}
 
         if (isWindows) {
-            // Try common installation paths on Windows
-            String[] commonPaths = {
-                "C:\\Users\\gt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\",
-                "C:\\MinGW\\bin\\",
-                "C:\\msys64\\mingw64\\bin\\",
-                "C:\\msys64\\usr\\bin\\"
-            };
+            String localAppData = System.getenv("LOCALAPPDATA");
+            List<String> commonPaths = new ArrayList<>();
+            
+            if (localAppData != null) {
+                // Try WinGet LLVM-MinGW path pattern dynamically
+                commonPaths.add(localAppData + "\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\");
+            }
+            commonPaths.add("C:\\MinGW\\bin\\");
+            commonPaths.add("C:\\msys64\\mingw64\\bin\\");
+            commonPaths.add("C:\\msys64\\usr\\bin\\");
 
             for (String path : commonPaths) {
                 String fullPath = path + compiler + ".exe";

@@ -143,12 +143,12 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
             int length;
             while ((length = is.read(buffer)) != -1) {
                 if (!session.isOpen()) break;
-                // Convert \n to \r\n for xterm.js proper rendering if needed, 
-                // but usually standard terminal output works if we just send the raw string.
-                // Actually xterm.js needs \r\n for newlines.
-                String text = new String(buffer, 0, length);
                 text = text.replace("\r\n", "\n").replace("\n", "\r\n");
-                session.sendMessage(new TextMessage(text));
+                synchronized (session) {
+                    if (session.isOpen()) {
+                        session.sendMessage(new TextMessage(text));
+                    }
+                }
             }
         } catch (IOException e) {
             // Stream closed
@@ -171,7 +171,11 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
         
         String compileError = new String(compileProcess.getErrorStream().readAllBytes());
         if (compileProcess.waitFor() != 0) {
-            ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+            synchronized (ws) {
+                if (ws.isOpen()) {
+                    ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+                }
+            }
             return null;
         }
 
@@ -211,13 +215,17 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
             return null;
         }
 
-        Process compileProcess = new ProcessBuilder(gccPath, sourceFile.toString(), "-o", binaryFile.toString())
+        Process compileProcess = new ProcessBuilder(gccPath, sourceFile.toString(), "-o", binaryFile.toString(), "-lm")
                 .directory(dir.toFile())
                 .start();
         
         String compileError = new String(compileProcess.getErrorStream().readAllBytes());
         if (compileProcess.waitFor() != 0) {
-            ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+            synchronized (ws) {
+                if (ws.isOpen()) {
+                    ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+                }
+            }
             return null;
         }
 
@@ -236,13 +244,17 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
             return null;
         }
 
-        Process compileProcess = new ProcessBuilder(gppPath, sourceFile.toString(), "-o", binaryFile.toString())
+        Process compileProcess = new ProcessBuilder(gppPath, sourceFile.toString(), "-o", binaryFile.toString(), "-lm")
                 .directory(dir.toFile())
                 .start();
         
         String compileError = new String(compileProcess.getErrorStream().readAllBytes());
         if (compileProcess.waitFor() != 0) {
-            ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+            synchronized (ws) {
+                if (ws.isOpen()) {
+                    ws.sendMessage(new TextMessage("Compilation Error:\r\n" + compileError.replace("\n", "\r\n")));
+                }
+            }
             return null;
         }
 
@@ -256,12 +268,17 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
         } catch (Exception ignored) {}
 
         if (isWindows) {
-            String[] commonPaths = {
-                "C:\\Users\\gt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\",
-                "C:\\MinGW\\bin\\",
-                "C:\\msys64\\mingw64\\bin\\",
-                "C:\\msys64\\usr\\bin\\"
-            };
+            String localAppData = System.getenv("LOCALAPPDATA");
+            java.util.List<String> commonPaths = new java.util.ArrayList<>();
+            
+            if (localAppData != null) {
+                // Try WinGet LLVM-MinGW path pattern dynamically
+                commonPaths.add(localAppData + "\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\");
+            }
+            commonPaths.add("C:\\MinGW\\bin\\");
+            commonPaths.add("C:\\msys64\\mingw64\\bin\\");
+            commonPaths.add("C:\\msys64\\usr\\bin\\");
+
             for (String path : commonPaths) {
                 if (new java.io.File(path + compiler + ".exe").exists()) {
                     return path + compiler + ".exe";

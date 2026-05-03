@@ -115,22 +115,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- xterm.js Initialization ---
-    term = new Terminal({
-        fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 13,
-        theme: {
-            background: '#000000',
-            foreground: '#d4d4d4',
-            cursor: '#7c4dff'
-        },
-        cursorBlink: true
-    });
-    fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(document.getElementById('xterm-container'));
-    fitAddon.fit();
-    term.writeln('\x1b[35mWelcome to Lumina Code v2.0 Interactive Terminal.\x1b[0m');
-    term.writeln('Ready to compile and run your code.');
+    try {
+        if (typeof Terminal === 'undefined') {
+            console.error('xterm.js (Terminal) is not defined. Terminal features will be disabled.');
+        } else {
+            term = new Terminal({
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 13,
+                theme: {
+                    background: '#000000',
+                    foreground: '#d4d4d4',
+                    cursor: '#7c4dff'
+                },
+                cursorBlink: true
+            });
+            fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+            term.open(document.getElementById('xterm-container'));
+            fitAddon.fit();
+            term.writeln('\x1b[35mWelcome to Lumina Code v2.0 Interactive Terminal.\x1b[0m');
+            term.writeln('Ready to compile and run your code.');
+        }
+    } catch (e) {
+        console.error('Error initializing terminal:', e);
+    }
 
     // --- Authentication Logic ---
     function updateAuthUI() {
@@ -179,7 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
-            const data = await response.json();
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (e) {
+                // Ignore parse error if body is empty or not JSON
+            }
             if (response.ok) {
                 token = data.token;
                 username = data.username;
@@ -189,11 +202,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('avatarUrl', avatarUrl);
                 updateAuthUI();
             } else {
-                authError.innerText = data.error || 'Authentication failed';
+                const errorMsg = data.error || (response.status === 401 ? 'Invalid username or password' : `Server error (${response.status})`);
+                authError.innerText = errorMsg;
                 authError.style.display = 'block';
             }
         } catch (err) {
-            authError.innerText = 'Server connection error';
+            console.error('Auth error:', err);
+            authError.innerText = 'Server connection error. Please check if the backend is running.';
             authError.style.display = 'block';
         }
     }

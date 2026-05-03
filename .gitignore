@@ -11,7 +11,7 @@ target/
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.oracle.com/technetwork/java/javase/community/error-report-138290.html
+# virtual machine crash logs
 hs_err_pid*
 replay_pid*
 
@@ -29,6 +29,12 @@ mvnw.cmd
 .settings/
 .classpath
 
-# Compiled frontend resources
+# Node / Frontend
+node_modules/
+package-lock.json
 /src/main/resources/static/node_modules/
 .DS_Store
+
+# Temporary / Scratch files
+test*.js
+server_start.log
