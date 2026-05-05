@@ -24,11 +24,15 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
     
     // Map to hold the process associated with each WebSocket session
     private final Map<String, ProcessSession> sessions = new ConcurrentHashMap<>();
+    
+    // Cache for compiler paths to speed up lookups
+    private static final Map<String, String> compilerCache = new ConcurrentHashMap<>();
 
     private static class ProcessSession {
         Process process;
         Path tempDir;
         OutputStream outputStream;
+        StringBuilder inputBuffer = new StringBuilder(); // Buffer input until process is ready
     }
 
     @Override
@@ -61,12 +65,17 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
             }
         } else {
             // This is an input message
-            if (ps.outputStream != null && ps.process != null && ps.process.isAlive()) {
-                try {
-                    ps.outputStream.write(payload.getBytes());
-                    ps.outputStream.flush();
-                } catch (IOException e) {
-                    // Process might have died, ignore
+            synchronized (ps) {
+                if (ps.outputStream != null && ps.process != null && ps.process.isAlive()) {
+                    try {
+                        ps.outputStream.write(payload.getBytes());
+                        ps.outputStream.flush();
+                    } catch (IOException e) {
+                        // Process might have died, ignore
+                    }
+                } else {
+                    // Buffer input if process isn't ready or hasn't started yet
+                    ps.inputBuffer.append(payload);
                 }
             }
         }
@@ -109,6 +118,15 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
 
             ps.process = runProcess;
             ps.outputStream = runProcess.getOutputStream();
+            
+            // Flush buffered input to the process
+            synchronized (ps) {
+                if (ps.inputBuffer.length() > 0) {
+                    ps.outputStream.write(ps.inputBuffer.toString().getBytes());
+                    ps.outputStream.flush();
+                    ps.inputBuffer.setLength(0);
+                }
+            }
             
             final Process finalProcess = runProcess;
 
@@ -236,7 +254,14 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
             return null;
         }
 
-        return new ProcessBuilder(binaryFile.toString()).directory(dir.toFile()).start();
+        List<String> runCmd = new ArrayList<>();
+        if (!isWindows) {
+            // Disable buffering on Linux for better interactive experience
+            runCmd.addAll(List.of("stdbuf", "-i0", "-o0", "-e0"));
+        }
+        runCmd.add(binaryFile.toString());
+
+        return new ProcessBuilder(runCmd).directory(dir.toFile()).start();
     }
 
     private Process compileAndRunCpp(WebSocketSession ws, Path dir, String code) throws Exception {
@@ -268,33 +293,69 @@ public class InteractiveTerminalHandler extends TextWebSocketHandler {
             return null;
         }
 
-        return new ProcessBuilder(binaryFile.toString()).directory(dir.toFile()).start();
+        List<String> runCmd = new ArrayList<>();
+        if (!isWindows) {
+            runCmd.addAll(List.of("stdbuf", "-i0", "-o0", "-e0"));
+        }
+        runCmd.add(binaryFile.toString());
+
+        return new ProcessBuilder(runCmd).directory(dir.toFile()).start();
     }
 
     private String findCompiler(String compiler) {
+        if (compilerCache.containsKey(compiler)) {
+            return compilerCache.get(compiler);
+        }
+
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        
+        // 1. Try standard PATH
         try {
-            if (new ProcessBuilder(compiler, "--version").start().waitFor() == 0) return compiler;
+            Process p = new ProcessBuilder(isWindows ? new String[]{"where", compiler} : new String[]{"which", compiler}).start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line = reader.readLine();
+                if (line != null && !line.isEmpty()) {
+                    compilerCache.put(compiler, line.trim());
+                    return line.trim();
+                }
+            }
         } catch (Exception ignored) {}
 
+        // 2. Try common locations
         if (isWindows) {
             String localAppData = System.getenv("LOCALAPPDATA");
             java.util.List<String> commonPaths = new java.util.ArrayList<>();
             
             if (localAppData != null) {
-                // Try WinGet LLVM-MinGW path pattern dynamically
-                commonPaths.add(localAppData + "\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\");
+                // Try to find any llvm-mingw version in WinGet packages
+                try {
+                    Path wingetRoot = Paths.get(localAppData, "Microsoft", "WinGet", "Packages");
+                    if (Files.exists(wingetRoot)) {
+                        try (var stream = Files.walk(wingetRoot, 3)) {
+                            stream.filter(p -> p.toString().contains("MartinStorsjo.LLVM-MinGW") && p.toString().endsWith("bin"))
+                                  .filter(p -> Files.exists(p.resolve(compiler + ".exe")))
+                                  .findFirst()
+                                  .ifPresent(p -> commonPaths.add(p.toString() + "\\"));
+                        }
+                    }
+                } catch (Exception ignored) {}
             }
+            
             commonPaths.add("C:\\MinGW\\bin\\");
             commonPaths.add("C:\\msys64\\mingw64\\bin\\");
             commonPaths.add("C:\\msys64\\usr\\bin\\");
 
             for (String path : commonPaths) {
-                if (new java.io.File(path + compiler + ".exe").exists()) {
-                    return path + compiler + ".exe";
+                File exe = new File(path + compiler + ".exe");
+                if (exe.exists()) {
+                    String fullPath = exe.getAbsolutePath();
+                    compilerCache.put(compiler, fullPath);
+                    return fullPath;
                 }
             }
         }
+        
+        // Fallback to compiler name if nothing found, but don't cache negative result
         return null;
     }
 

@@ -309,7 +309,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/execute`);
         window.activeSocket = ws;
 
+        // Set a timeout for connection
+        const connectionTimeout = setTimeout(() => {
+            if (ws.readyState === WebSocket.CONNECTING) {
+                term.writeln('\x1b[33mStill trying to connect... Server might be starting up.\x1b[0m');
+            }
+        }, 5000);
+
         ws.onopen = () => {
+            clearTimeout(connectionTimeout);
             term.writeln('\x1b[32mConnected to server. Compiling...\x1b[0m');
             ws.send(JSON.stringify({ code, language }));
             
@@ -332,14 +340,21 @@ document.addEventListener('DOMContentLoaded', () => {
             term.write(event.data);
         };
 
-        ws.onclose = () => {
+        ws.onclose = (e) => {
+            clearTimeout(connectionTimeout);
             if (window.termDataListener) window.termDataListener.dispose();
-            term.writeln('\r\n\x1b[33m[Disconnected from server]\x1b[0m');
+            if (e.code === 1006) {
+                term.writeln('\r\n\x1b[31m[Connection lost or server timed out]\x1b[0m');
+            } else {
+                term.writeln('\r\n\x1b[33m[Disconnected from server]\x1b[0m');
+            }
             runBtn.disabled = false;
         };
 
         ws.onerror = (err) => {
-            term.writeln('\r\n\x1b[31m[WebSocket Error Occurred]\x1b[0m');
+            clearTimeout(connectionTimeout);
+            term.writeln('\r\n\x1b[31m[WebSocket Connection Error]\x1b[0m');
+            term.writeln('\x1b[31mTip: Check if the backend is running and reachable.\x1b[0m');
             runBtn.disabled = false;
         };
     }

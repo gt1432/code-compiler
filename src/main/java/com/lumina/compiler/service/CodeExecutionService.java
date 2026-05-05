@@ -156,14 +156,27 @@ public class CodeExecutionService {
             throw e;
         }
     }
+    private static final Map<String, String> compilerCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     private String findCompiler(String compiler) {
+        if (compilerCache.containsKey(compiler)) {
+            return compilerCache.get(compiler);
+        }
+
         String os = System.getProperty("os.name").toLowerCase();
         boolean isWindows = os.contains("win");
 
-        // Try standard PATH first
+        // 1. Try standard PATH
         try {
-            Process process = new ProcessBuilder(compiler, "--version").start();
-            if (process.waitFor() == 0) return compiler;
+            Process p = new ProcessBuilder(isWindows ? new String[]{"where", compiler} : new String[]{"which", compiler}).start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line = reader.readLine();
+                if (line != null && !line.isEmpty()) {
+                    String path = line.trim();
+                    compilerCache.put(compiler, path);
+                    return path;
+                }
+            }
         } catch (Exception ignored) {}
 
         if (isWindows) {
@@ -171,8 +184,18 @@ public class CodeExecutionService {
             List<String> commonPaths = new ArrayList<>();
             
             if (localAppData != null) {
-                // Try WinGet LLVM-MinGW path pattern dynamically
-                commonPaths.add(localAppData + "\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20260421-ucrt-x86_64\\bin\\");
+                // Try to find any llvm-mingw version in WinGet packages
+                try {
+                    Path wingetRoot = Paths.get(localAppData, "Microsoft", "WinGet", "Packages");
+                    if (Files.exists(wingetRoot)) {
+                        try (var stream = Files.walk(wingetRoot, 3)) {
+                            stream.filter(p -> p.toString().contains("MartinStorsjo.LLVM-MinGW") && p.toString().endsWith("bin"))
+                                  .filter(p -> Files.exists(p.resolve(compiler + ".exe")))
+                                  .findFirst()
+                                  .ifPresent(p -> commonPaths.add(p.toString() + "\\"));
+                        }
+                    }
+                } catch (Exception ignored) {}
             }
             commonPaths.add("C:\\MinGW\\bin\\");
             commonPaths.add("C:\\msys64\\mingw64\\bin\\");
@@ -181,6 +204,7 @@ public class CodeExecutionService {
             for (String path : commonPaths) {
                 String fullPath = path + compiler + ".exe";
                 if (new java.io.File(fullPath).exists()) {
+                    compilerCache.put(compiler, fullPath);
                     return fullPath;
                 }
             }
